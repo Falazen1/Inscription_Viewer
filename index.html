@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search by Address</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <script src="./abi.js"></script>
+</head>
+<body>
+    <h1>Search by Address</h1>
+    <form id="search-form">
+        <label for="address">Ethereum Address:</label>
+        <input type="text" id="address" name="address" required>
+        <button type="button" id="search-button">Search</button> <!-- Changed type to "button" -->
+    </form>
+    <div id="result"></div>
+
+    <!-- Overlay for displaying Froggi inscriptions -->
+    <div id="overlay" class="overlay">
+        <div class="overlay-content">
+            <span class="close-button" onclick="closeOverlay()">&times;</span>
+            <div id="overlay-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'alcht_LfASmJUztefO2ReUvuwzILDzVPRDqC';
+        const BASE_URL = `https://base-mainnet.g.alchemy.com/v2/${API_KEY}`;
+        const CONTRACT_ADDRESS = '0x88A78C5035BdC8C9A8bb5c029e6cfCDD14B822FE';
+        const DYNAMIC_INSCRIPTION_METHOD = '0x0c53c51c'; // Method ID for dynamicInscription(address);
+
+        // Ensure the Web3 library is loaded and initialized
+        let web3;
+        let contract;
+        window.addEventListener('load', function() {
+            if (typeof Web3 !== 'undefined') {
+                web3 = new Web3(BASE_URL);
+                contract = new web3.eth.Contract(data.abi, CONTRACT_ADDRESS)
+            } else {
+                console.error('Web3 is not defined');
+            }
+        });
+
+        document.getElementById('search-button').addEventListener('click', function() {
+            const address = document.getElementById('address').value;
+            searchByAddress(address);
+        });
+
+        function searchByAddress(address) {
+            contract.methods['dynamicInscription'](address).call().then(response => {
+                const inscriptionData = {seed: response[0], extra: response[1]};
+                if (inscriptionData.seed != 0){
+                        contract.methods['getSvg']([1, 0]).call().then(response2 => {
+                        displayOverlay(inscriptionData, response2);                        
+                        })
+                        .catch(error => {
+                            console.error('Error fetching data:', error);
+                            document.getElementById('result').innerHTML = '<p>Error fetching data. Please try again.</p>';
+                        });
+                    } else {
+                        throw('No Seed Data for given address');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('result').innerHTML = '<p>Error fetching data. Please try again.</p>';
+                });
+            
+        }
+
+        function parseFroggiData(data) {
+            // Ensure web3 is defined and use it to decode the parameters
+            if (web3) {
+                const decodedData = web3.eth.abi.decodeParameters(['uint256', 'uint256'], data);
+                const inscriptions = { seed: decodedData[0], extra: decodedData[1] };
+                return inscriptions;
+            } else {
+                console.error('web3 is not initialized');
+                return { seed: 'N/A', extra: 'N/A' };
+            }
+        }
+
+        function displayOverlay(content, svg) {
+            const htmlContent = `
+                <p>Seed: ${content.seed}</p>
+                <p>Extra: ${content.extra}</p>
+                <p>${svg}</p>
+            `;
+            document.getElementById('overlay-content').innerHTML = htmlContent;
+            document.getElementById('overlay').style.display = 'block'; 
+        }
+
+        function closeOverlay() {
+            document.getElementById('overlay').style.display = 'none';
+        }
+    </script>
+
+    <style>
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+.overlay-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 700px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>
