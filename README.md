@@ -1,4 +1,4 @@
-****THIS REPOSITORY DOES NOT CONTAIN ANY CODE*****
+****THIS REPOSITORY IS FOR DEBOUNCING APP IMAGES****
 
 When this particular repo was built, it was for the most rudimentary version of an inscription viewer. 
 
